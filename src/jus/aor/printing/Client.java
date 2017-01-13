@@ -104,7 +104,41 @@ public class Client {
 	 * @param n nombre de requêtes d'impression à faire
 	 */
 	public void queryPrint(final File f,int n) {
-		//-------------------------------------------------------------------------- A COMPLETER
+		JobKey jobkey = new JobKey();
+		Socket server = null;
+		try {
+			server = new Socket(host,port);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Connected to "+server.getInetAddress());
+		
+		OutputStream os = null;
+		try {
+			os = server.getOutputStream();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		DataOutputStream dos = null;
+		
+		dos = new DataOutputStream(os);
+		
+		try {
+			dos.writeInt(0);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		try {
+			dos.write(jobkey.marshal());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	/**
 	 * protocole du server status
@@ -123,6 +157,9 @@ public class Client {
 	 * @param args
 	 */
 	public static void main(String args[]) {
-		new Client();
+		Client c = new Client();
+		c.queryPrint(null, 0);
+		
+		
 	}
 }
