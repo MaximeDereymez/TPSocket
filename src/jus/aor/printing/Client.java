@@ -113,31 +113,26 @@ public class Client {
 		}
 		System.out.println("Connected to "+server.getInetAddress());
 		
-		OutputStream os = null;
-		try {
-			os = server.getOutputStream();
+		//envoi de la requête d'impression avec jobkey
+		try{
+			OutputStream os = server.getOutputStream();
+			DataOutputStream dos = new DataOutputStream(os);
+			dos.writeInt(Notification.QUERY_PRINT.I);
+			dos.writeUTF(new String(jobkey.marshal()));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		DataOutputStream dos = null;
-		
-		dos = new DataOutputStream(os);
-		
-		try {
-			dos.writeInt(0);
+		//réception de la réponse du serveur d'impression
+		try{
+			InputStream is = server.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+			if(dis.readInt() == Notification.REPLY_PRINT_OK.I && jobkey.equals(new JobKey(dis.readUTF().getBytes())))
+				System.out.println("Query accepted");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		try {
-			dos.write(jobkey.marshal());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 	}
 	/**
@@ -159,7 +154,5 @@ public class Client {
 	public static void main(String args[]) {
 		Client c = new Client();
 		c.queryPrint(null, 0);
-		
-		
 	}
 }
