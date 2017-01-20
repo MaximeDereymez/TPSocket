@@ -2,8 +2,20 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="jus.aor.printing.client.jar"/>
-	<classpathentry kind="lib" path="jus.aor.printing.server.jar"/>
-	<classpathentry kind="lib" path="jus.util.jar"/>
+	<classpathentry kind="lib" path="jus.aor.printing.client.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/home/maxime/workspace/AppR/TPSocket/Doc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="jus.aor.printing.server.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/home/maxime/workspace/AppR/TPSocket/Doc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="jus.util.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/home/maxime/workspace/AppR/TPSocket/Doc/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

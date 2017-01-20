@@ -4,7 +4,10 @@
 package jus.aor.printing;
 
 import java.lang.management.ManagementFactory;
+import java.text.DateFormat;
 import java.util.Date;
+
+import javax.swing.text.DateFormatter;
 
 /**
  * Représentation d'une identification de Job (travail d'impression), l'identification de la JVM cliente et
@@ -36,7 +39,9 @@ public class JobKey {
 	 * @param marshal le tableau de bytes de la forme textuelle
 	 */
 	public JobKey(byte[] marshal) {
-		//----------------------------------------------------------------------------- A COMPLETER
+		String[] params = new String(marshal).split("¤");
+		serverId = params[0];
+		date = Long.valueOf(params[1]);
 	}
 	/**
 	 * restitue le tableau de bytes de la forme textuelle.

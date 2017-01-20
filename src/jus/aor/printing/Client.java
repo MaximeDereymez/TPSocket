@@ -29,7 +29,7 @@ public class Client {
 	/** le listener UDP est-il vivant */
 	private boolean alive=true;
 	/** le logger du client */
-	private Logger log = Logger.getLogger("Jus.Aor.Printing.Client","jus.aor.printing.Client");
+	private Logger log = Logger.getLogger(/*"Jus.Aor.Printing.Client",*/"jus.aor.printing.Client");
 	/** l'interfaçage avec la console du client */
 	private ClientGUI GUI;
 	/**
@@ -83,12 +83,32 @@ public class Client {
 		Socket soc = null;
 		try(InputStream fis = new FileInputStream(f)){
 			Notification ret;
-			//-------------------------------------------------------------------------- A COMPLETER
+			JobKey jobkey = new JobKey();
+			soc = new Socket(host,port);
+			System.out.println("Connected to "+soc.getInetAddress());
+
+			//envoi de la requête d'impression avec jobkey
+			OutputStream os = soc.getOutputStream();
+			DataOutputStream dos = new DataOutputStream(os);
+			dos.writeInt(QUERY_PRINT.I);
+			dos.writeUTF(new String(jobkey.marshal()));
+			
+			JobKey rcvJob = null;
+			//réception de la réponse du serveur d'impression
+			InputStream is = soc.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+			if(dis.readInt() == REPLY_PRINT_OK.I)
+				ret = Notification.REPLY_PRINT_OK;
+			else
+				ret = null;
+			rcvJob = new JobKey(dis.readUTF().getBytes());
+			System.out.println("Query accepted");
+				
 			if(ret == REPLY_PRINT_OK) {
-				//------------------------------------------------------------------------ A COMPLETER
-				// Dans le cas où tout est correct on ajoute le job à la liste des encours.
-				//	{log.log(Level.INFO_3,"Client.QueryPrint.Processing",key);
-				//	GUI.addPrintList(key);}
+				if(jobkey.equals(rcvJob)){
+					log.log(Level.INFO_3,"Client.QueryPrint.Processing",jobkey);
+					GUI.addPrintList(jobkey);
+				}
 			} else log.log(Level.WARNING,"Client.QueryPrint.Failed",ret.toString());
 		}catch(NumberFormatException e){
 			log.log(Level.SEVERE,"Client.QueryPrint.Port.Error",e.getMessage());
@@ -104,36 +124,8 @@ public class Client {
 	 * @param n nombre de requêtes d'impression à faire
 	 */
 	public void queryPrint(final File f,int n) {
-		JobKey jobkey = new JobKey();
-		Socket server = null;
-		try {
-			server = new Socket(host,port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("Connected to "+server.getInetAddress());
-		
-		//envoi de la requête d'impression avec jobkey
-		try{
-			OutputStream os = server.getOutputStream();
-			DataOutputStream dos = new DataOutputStream(os);
-			dos.writeInt(Notification.QUERY_PRINT.I);
-			dos.writeUTF(new String(jobkey.marshal()));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		//réception de la réponse du serveur d'impression
-		try{
-			InputStream is = server.getInputStream();
-			DataInputStream dis = new DataInputStream(is);
-			if(dis.readInt() == Notification.REPLY_PRINT_OK.I && jobkey.equals(new JobKey(dis.readUTF().getBytes())))
-				System.out.println("Query accepted");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		
+		for(int i=0; i<n; i++)
+			onePrint(f);
 	}
 	/**
 	 * protocole du server status
@@ -153,6 +145,6 @@ public class Client {
 	 */
 	public static void main(String args[]) {
 		Client c = new Client();
-		c.queryPrint(null, 0);
+		c.queryPrint(null, 10);
 	}
 }

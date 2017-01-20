@@ -1,6 +1,10 @@
 package jus.aor.printing;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.Thread.State;
 import java.net.*;
 import java.util.*;
@@ -29,7 +33,7 @@ public class Server {
 	/** le master server TCP socket */
 	protected ServerSocket serverTCPSoc;
 	/** le logger du server */
-	Logger log = Logger.getLogger("Jus.Aor.Printing.Server","jus.aor.printing.Server");
+	Logger log = Logger.getLogger(/*"Jus.Aor.Printing.Server",*/"jus.aor.printing.Server");
 	/**
 	 * Construction du server d'impression
 	 */
@@ -48,7 +52,26 @@ public class Server {
 			while(alive) {
 				log.log(Level.INFO,"Server.TCP.Waiting");
 				try{
-					//---------------------------------------------------------------------- A COMPLETER
+					soc = serverTCPSoc.accept();
+					
+					//réception de la réponse du serveur d'impression
+					try{
+						InputStream is = soc.getInputStream();
+						DataInputStream dis = new DataInputStream(is);
+						if(dis.readInt() == QUERY_PRINT.I){
+							String read = dis.readUTF();
+							System.out.println(read);
+							JobKey jobkey = new JobKey(read.getBytes());
+							System.out.println("Query accepted");
+							OutputStream os = soc.getOutputStream();
+							DataOutputStream dos = new DataOutputStream(os);
+							dos.writeInt(REPLY_PRINT_OK.I);
+							dos.writeUTF(new String(jobkey.marshal()));
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					
 				}catch(SocketException e){
 						// socket has been closed, master serverTCP will stop.
 				}catch(ArrayIndexOutOfBoundsException e){
@@ -89,6 +112,9 @@ public class Server {
 	 * @param args
 	 */
 	public static void main (String args[]) { 
-      new ServerGUI(new Server()); 
+		Server s = new Server();
+      new ServerGUI(s); 
+      s.alive = true;
+      s.runTCP();
 	}
 }
