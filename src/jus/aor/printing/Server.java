@@ -10,7 +10,7 @@ import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-import jus.aor.printing.Esclave.Slave;
+import jus.aor.printing.Esclave;
 import jus.util.Formule;
 
 import static jus.aor.printing.Notification.*;

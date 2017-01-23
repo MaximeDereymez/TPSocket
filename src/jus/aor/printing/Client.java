@@ -124,8 +124,9 @@ public class Client {
 	 * @param n nombre de requêtes d'impression à faire
 	 */
 	public void queryPrint(final File f,int n) {
-		for(int i=0; i<n; i++)
-			onePrint(f);
+		if(n==0) return;
+		new Thread(new FakeClient(f,this,n-1)).start();
+		onePrint(f);
 	}
 	/**
 	 * protocole du server status
@@ -142,9 +143,11 @@ public class Client {
 	}
 	/**
 	 * @param args
+	 * @throws FileNotFoundException 
 	 */
-	public static void main(String args[]) {
+	public static void main(String args[]) throws FileNotFoundException {
+		File f = new File("README.md");
 		Client c = new Client();
-		c.queryPrint(null, 10);
+		c.queryPrint(f, 10);
 	}
 }
