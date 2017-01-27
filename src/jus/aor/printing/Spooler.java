@@ -58,22 +58,33 @@ public class Spooler extends Thread {
 	public void run() {		
 		JobPrint file=null;
 		while(alive || spool.size()>0){
-			//----------------------------------------------------------------------------- A COMPLETER
+			synchronized(this){
+				file = spool.poll();
+			}
+			if(file!=null){
+				GUI.mouchard.out.println("Printing...");
+				try {
+					sleep(duree(file.size));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				GUI.mouchard.out.println(file.content);
+			}
 		}
 		log.log(Level.INFO_1,"Spooler.Terminated");
 		GUI.dispose();
-		try{
+		/*try{
 			//----------------------------------------------------------------------------- A COMPLETER
 		}catch(IOException e){
 			log.log(Level.SEVERE,e.getMessage());
-		}
+		}*/
 	}
 	/**
 	 * Ajour d'un fichier dans le spooler d'impression
 	 * @param file le fichier à insérer dans le spooler.
 	 */
 	public synchronized void add(JobPrint file) {
-		//----------------------------------------------------------------------------- A COMPLETER
+		spool.add(file);
 	}
 	/**
 	 * renvoie le nombre de jobs en attente

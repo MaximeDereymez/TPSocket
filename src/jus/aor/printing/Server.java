@@ -8,6 +8,9 @@ import java.io.OutputStream;
 import java.lang.Thread.State;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
 import jus.aor.printing.Esclave;
@@ -18,7 +21,7 @@ import static jus.aor.printing.Notification.*;
  * Représentation du serveur d'impression.
  * @author Morat
  */
-public class Server {
+public class Server implements Runnable {
 	/** 1 second timeout for waiting replies */
 	protected static final int TIMEOUT = 1000;
 	protected static final int MAX_REPONSE_LEN = 1024;
@@ -33,7 +36,9 @@ public class Server {
 	/** le master server TCP socket */
 	protected ServerSocket serverTCPSoc;
 	/** le logger du server */
-	Logger log = Logger.getLogger(/*"Jus.Aor.Printing.Server",*/"jus.aor.printing.Server");
+	Logger log = Logger.getLogger("Jus.Aor.Printing.Server","jus.aor.printing.Server");
+	Spooler spooler;
+	protected BlockingQueue<Esclave> esclaves;
 	/**
 	 * Construction du server d'impression
 	 */
@@ -48,30 +53,17 @@ public class Server {
 			Socket soc=null;
 			serverTCPSoc = new ServerSocket(port, backlog);
 			Notification protocole=null;
-			log.log(Level.INFO_1,"Server.TCP.Started",new Object[] {port,backlog});
+			Esclave esclave;
+			log.log(Level.INFO_1,"Server.TCP.Started",new Object[] {port,backlog,poolSize});
 			while(alive) {
 				log.log(Level.INFO,"Server.TCP.Waiting");
 				try{
 					soc = serverTCPSoc.accept();
-					
-					//réception de la réponse du serveur d'impression
-					try{
-						InputStream is = soc.getInputStream();
-						DataInputStream dis = new DataInputStream(is);
-						if(dis.readInt() == QUERY_PRINT.I){
-							String read = dis.readUTF();
-							System.out.println(read);
-							JobKey jobkey = new JobKey(read.getBytes());
-							System.out.println("Query accepted");
-							OutputStream os = soc.getOutputStream();
-							DataOutputStream dos = new DataOutputStream(os);
-							dos.writeInt(REPLY_PRINT_OK.I);
-							dos.writeUTF(new String(jobkey.marshal()));
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					
+					esclave=esclaves.poll();
+					if(esclave==null)
+						(esclave = new Esclave(spooler)).start();
+					esclave.addPrint(soc);
+					log.log(Level.INFO_1, "Server.Slave.Running",new Object[] {esclave});
 				}catch(SocketException e){
 						// socket has been closed, master serverTCP will stop.
 				}catch(ArrayIndexOutOfBoundsException e){
@@ -99,13 +91,28 @@ public class Server {
 	 * 
 	 */
 	void start(){
-		//---------------------------------------------------------------------- A COMPLETER
+		spooler = new Spooler(3001);
+		spooler.start();
+		esclaves = new ArrayBlockingQueue<Esclave>(Math.max(poolSize,1));
+		for(int i=0; i<poolSize; i++)
+			new Esclave(spooler,esclaves).start();
+		alive=true;
+		new Thread(this).start();
 	}
 	/**
 	 * 
 	 */
 	public void stop(){
-		//---------------------------------------------------------------------- A COMPLETER		
+		alive=false;
+		spooler.stopping();
+		try {
+			serverTCPSoc.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void run(){
+		runTCP();
 	}
 	/**
 	 * 
@@ -113,8 +120,6 @@ public class Server {
 	 */
 	public static void main (String args[]) { 
 		Server s = new Server();
-      new ServerGUI(s); 
-      s.alive = true;
-      s.runTCP();
+		new ServerGUI(s); 
 	}
 }

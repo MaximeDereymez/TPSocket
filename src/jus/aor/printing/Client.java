@@ -22,6 +22,7 @@ import static jus.aor.printing.Notification.*;
 public class Client {
 	/** 1 second timeout for waiting replies */
 	protected static final int TIMEOUT = 1000;
+	private static final int MAX_LEN_BUFFER = 1024;
 	/** la machine supportant le serveur d'impression */
 	private String host = "localhost";
 	/** le port d'installation du serveur d'impression */
@@ -29,7 +30,7 @@ public class Client {
 	/** le listener UDP est-il vivant */
 	private boolean alive=true;
 	/** le logger du client */
-	private Logger log = Logger.getLogger(/*"Jus.Aor.Printing.Client",*/"jus.aor.printing.Client");
+	private Logger log = Logger.getLogger("Jus.Aor.Printing.Client","jus.aor.printing.Client");
 	/** l'interfaçage avec la console du client */
 	private ClientGUI GUI;
 	/**
@@ -85,24 +86,32 @@ public class Client {
 			Notification ret;
 			JobKey jobkey = new JobKey();
 			soc = new Socket(host,port);
-			System.out.println("Connected to "+soc.getInetAddress());
 
 			//envoi de la requête d'impression avec jobkey
 			OutputStream os = soc.getOutputStream();
 			DataOutputStream dos = new DataOutputStream(os);
+			InputStream is = new FileInputStream(f);
+			byte[] content = new byte[MAX_LEN_BUFFER];
+			//NOTIFICATION
 			dos.writeInt(QUERY_PRINT.I);
+			//PARAMETRES
 			dos.writeUTF(new String(jobkey.marshal()));
+			dos.writeLong(f.length());
+			//DONNEES
+			int length;
+	        while ((length = is.read(content)) > 0) {
+	            dos.write(content, 0, length);
+	        }
 			
-			JobKey rcvJob = null;
 			//réception de la réponse du serveur d'impression
-			InputStream is = soc.getInputStream();
+			JobKey rcvJob = null;
+			is = soc.getInputStream();
 			DataInputStream dis = new DataInputStream(is);
 			if(dis.readInt() == REPLY_PRINT_OK.I)
 				ret = Notification.REPLY_PRINT_OK;
 			else
 				ret = null;
 			rcvJob = new JobKey(dis.readUTF().getBytes());
-			System.out.println("Query accepted");
 				
 			if(ret == REPLY_PRINT_OK) {
 				if(jobkey.equals(rcvJob)){
@@ -124,10 +133,14 @@ public class Client {
 	 * @param n nombre de requêtes d'impression à faire
 	 */
 	public void queryPrint(final File f,int n) {
-		if(n==0) return;
-		new Thread(new FakeClient(f,this,n-1)).start();
-		onePrint(f);
-	}
+		for(int i=0; i<n; i++)
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					onePrint(f);
+				}
+			}).start();
+	}	
 	/**
 	 * protocole du server status
 	 */
@@ -146,8 +159,6 @@ public class Client {
 	 * @throws FileNotFoundException 
 	 */
 	public static void main(String args[]) throws FileNotFoundException {
-		File f = new File("README.md");
 		Client c = new Client();
-		c.queryPrint(f, 10);
 	}
 }
