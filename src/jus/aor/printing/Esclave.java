@@ -40,31 +40,16 @@ public class Esclave extends Thread{
 			//réception de la réponse du serveur d'impression
 			try{
 				current = clients.take();
-				InputStream is = current.getInputStream();
-				DataInputStream dis = new DataInputStream(is);
-				if(dis.readInt() == QUERY_PRINT.I){
+				if(TCP.readProtocole(current)==QUERY_PRINT){
 					//réception de la requête
-					String read = dis.readUTF();
-					JobKey jobkey = new JobKey(read.getBytes());
-					long length = dis.readLong();
-					byte[] content = new byte[Server.MAX_REPONSE_LEN];
-					String contentString = "";
-			        while (length > Server.MAX_REPONSE_LEN) {
-			        	length -= dis.read(content,0,Server.MAX_REPONSE_LEN);
-			            //System.out.println(new String(content));
-			        	contentString += new String(content);
-			        }
-			        dis.read(content,0,(int)length);
-			        //System.out.println(new String(content));
-		        	contentString += new String(content);
+					JobKey jobkey = TCP.readJobKey(current);
+					String content = TCP.readData(current);
 			        
-			        spooler.add(new JobPrint(jobkey, contentString));
+			        spooler.add(new JobPrint(jobkey, content));
 			        
 					//réponse
-					OutputStream os = current.getOutputStream();
-					DataOutputStream dos = new DataOutputStream(os);
-					dos.writeInt(REPLY_PRINT_OK.I);
-					dos.writeUTF(new String(jobkey.marshal()));
+			        TCP.writeProtocole(current, REPLY_PRINT_OK);
+			        TCP.writeJobKey(current, jobkey);
 				}
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();

@@ -16,5 +16,12 @@ public enum Notification implements Serializable {
 	private Notification(int i){
 		I = i;
 	}
+	
+	public static Notification getById(int i){
+		for (Notification not : Notification.values())
+			if(not.I==i)
+				return not;
+		return null;
+	}
 }
 

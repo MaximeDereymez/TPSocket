@@ -83,35 +83,21 @@ public class Client {
 	private void onePrint(File f){
 		Socket soc = null;
 		try(InputStream fis = new FileInputStream(f)){
-			Notification ret;
 			JobKey jobkey = new JobKey();
 			soc = new Socket(host,port);
 
 			//envoi de la requête d'impression avec jobkey
-			OutputStream os = soc.getOutputStream();
-			DataOutputStream dos = new DataOutputStream(os);
-			InputStream is = new FileInputStream(f);
-			byte[] content = new byte[MAX_LEN_BUFFER];
 			//NOTIFICATION
-			dos.writeInt(QUERY_PRINT.I);
+			TCP.writeProtocole(soc, QUERY_PRINT);
 			//PARAMETRES
-			dos.writeUTF(new String(jobkey.marshal()));
-			dos.writeLong(f.length());
+			TCP.writeJobKey(soc, jobkey);
 			//DONNEES
-			int length;
-	        while ((length = is.read(content)) > 0) {
-	            dos.write(content, 0, length);
-	        }
+			TCP.writeData(soc, new FileInputStream(f), (int)f.length());
 			
 			//réception de la réponse du serveur d'impression
-			JobKey rcvJob = null;
-			is = soc.getInputStream();
-			DataInputStream dis = new DataInputStream(is);
-			if(dis.readInt() == REPLY_PRINT_OK.I)
-				ret = Notification.REPLY_PRINT_OK;
-			else
-				ret = null;
-			rcvJob = new JobKey(dis.readUTF().getBytes());
+			Notification ret = TCP.readProtocole(soc);
+			JobKey rcvJob = TCP.readJobKey(soc);
+			soc.close();
 				
 			if(ret == REPLY_PRINT_OK) {
 				if(jobkey.equals(rcvJob)){

@@ -3,6 +3,8 @@
  */
 package jus.aor.printing;
 
+import static jus.aor.printing.Notification.QUERY_PRINT;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -24,7 +26,7 @@ class TCP{
 	 * @throws IOException
 	 */
 	static void writeProtocole(Socket soc,  Notification not) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		new DataOutputStream(soc.getOutputStream()).writeInt(not.I);
 	}
 	/**
 	 * 
@@ -33,7 +35,7 @@ class TCP{
 	 * @throws IOException
 	 */
 	static Notification readProtocole(Socket soc) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		return Notification.getById(new DataInputStream(soc.getInputStream()).readInt());
 	}
 	/**
 	 * 
@@ -42,7 +44,7 @@ class TCP{
 	 * @throws IOException
 	 */
 	static void writeJobKey(Socket soc, JobKey key) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		new DataOutputStream(soc.getOutputStream()).writeUTF(new String(key.marshal()));
 	}
 	/**
 	 * 
@@ -51,7 +53,7 @@ class TCP{
 	 * @throws IOException
 	 */
 	static JobKey readJobKey(Socket soc) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		return new JobKey(new DataInputStream(soc.getInputStream()).readUTF().getBytes());
 	}
 	/**
 	 * 
@@ -61,7 +63,12 @@ class TCP{
 	 * @throws IOException
 	 */
 	static void writeData(Socket soc, InputStream fis, int len) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		byte[] content = new byte[MAX_LEN_BUFFER];
+		DataOutputStream dos = new DataOutputStream(soc.getOutputStream());
+		dos.writeInt(len);
+		int length;
+        while ((length = fis.read(content)) > 0) 
+        	dos.write(content, 0, length);
 	}
 	/**
 	 * 
@@ -70,7 +77,17 @@ class TCP{
 	 * @throws IOException
 	 */
 	static String readData(Socket soc) throws IOException {
-	//----------------------------------------------------------------------------- A COMPLETER
+		DataInputStream dis = new DataInputStream(soc.getInputStream());
+		int len = dis.readInt();
+		byte[] content = new byte[MAX_LEN_BUFFER];
+		String contentString = "";
+        while (len > MAX_LEN_BUFFER) {
+        	len -= dis.read(content,0,MAX_LEN_BUFFER);
+        	contentString += new String(content);
+        }
+        dis.read(content,0,(int)len);
+    	contentString += new String(content);
+    	return contentString;
 	}
 	/**
 	 * 
